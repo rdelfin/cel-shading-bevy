@@ -17,5 +17,5 @@ layout(std140, set = 0, binding = 1) uniform CameraPosition {
 void main() {
     vec3 view_dir = normalize(CameraPos.xyz - v_WorldPosition);
     float factor = dot(view_dir, v_WorldNormal);
-    o_Target = factor * albedo_color;
+    o_Target = vec4(factor * albedo_color.xyz, albedo_color.w);
 }

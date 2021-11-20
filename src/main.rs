@@ -40,7 +40,7 @@ fn main() -> anyhow::Result<()> {
     configure_logging()?;
 
     App::build()
-        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
+        .insert_resource(ClearColor(Color::rgb(0.5, 0.5, 0.5)))
         .insert_resource(WindowDescriptor {
             title: "Cel Shading".to_string(),
             width: 1280.,
