@@ -1,11 +1,19 @@
 use bevy::{
     app::App,
-    asset::{AssetServer, Assets},
+    asset::{AddAsset, AssetServer, Assets},
     ecs::system::{Commands, IntoSystem, Res, ResMut},
     input::system::exit_on_esc_system,
     math::Vec3,
-    pbr::{prelude::StandardMaterial, LightBundle, PbrBundle},
-    render::{color::Color, draw::Visible, entity::PerspectiveCameraBundle, pass::ClearColor},
+    reflect::TypeUuid,
+    render::{
+        color::Color,
+        entity::{MeshBundle, PerspectiveCameraBundle},
+        pass::ClearColor,
+        pipeline::{PipelineDescriptor, RenderPipeline, RenderPipelines},
+        render_graph::{base, AssetRenderResourcesNode, RenderGraph},
+        renderer::RenderResources,
+        shader::{Shader, ShaderStage, ShaderStages},
+    },
     transform::components::Transform,
     window::WindowDescriptor,
     DefaultPlugins,
@@ -18,6 +26,15 @@ use log4rs::{
     config::{Appender, Config, Logger, Root},
     encode::pattern::PatternEncoder,
 };
+
+const VERTEX_SHADER: &str = include_str!("shaders/cel.vert");
+const FRAGMENT_SHADER: &str = include_str!("shaders/cel.frag");
+
+#[derive(RenderResources, Default, TypeUuid)]
+#[uuid = "1e08866c-0b8a-437e-8bce-37733b25127e"]
+struct MyMaterial {
+    pub albedo_color: Color,
+}
 
 fn main() -> anyhow::Result<()> {
     configure_logging()?;
@@ -36,6 +53,7 @@ fn main() -> anyhow::Result<()> {
         .add_plugin(ObjPlugin)
         .add_startup_system(setup.system())
         .add_system(exit_on_esc_system.system())
+        .add_asset::<MyMaterial>()
         .run();
 
     Ok(())
@@ -45,36 +63,52 @@ fn main() -> anyhow::Result<()> {
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut materials: ResMut<Assets<MyMaterial>>,
+    mut pipelines: ResMut<Assets<PipelineDescriptor>>,
+    mut shaders: ResMut<Assets<Shader>>,
+    mut render_graph: ResMut<RenderGraph>,
 ) {
-    // this material renders the texture normally
-    let material_handle = materials.add(StandardMaterial {
-        base_color: Color::rgb(0.0, 1.0, 0.0),
-        ..StandardMaterial::default()
+    // Setup shaders
+    let pipeline_handle = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
+        vertex: shaders.add(Shader::from_glsl(ShaderStage::Vertex, VERTEX_SHADER)),
+        fragment: Some(shaders.add(Shader::from_glsl(ShaderStage::Fragment, FRAGMENT_SHADER))),
+    }));
+
+    render_graph.add_system_node(
+        "my_material",
+        AssetRenderResourcesNode::<MyMaterial>::new(true),
+    );
+
+    render_graph
+        .add_node_edge("my_material", base::node::MAIN_PASS)
+        .unwrap();
+
+    let material = materials.add(MyMaterial {
+        albedo_color: Color::rgb(0.0, 1.0, 0.0),
     });
 
-    commands.spawn_bundle(LightBundle {
+    /*commands.spawn_bundle(LightBundle {
         transform: Transform::from_xyz(2.0, 4.0, -5.0),
         ..LightBundle::default()
-    });
+    });*/
     commands.spawn_bundle(PerspectiveCameraBundle {
         transform: Transform::from_xyz(5., 10., -20.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..PerspectiveCameraBundle::default()
     });
 
-    commands.spawn_bundle(PbrBundle {
-        mesh: asset_server.load("meshes/teapot.obj"),
-        material: material_handle,
-        transform: Transform {
-            translation: Vec3::new(0., 0., 0.),
-            ..Transform::default()
-        },
-        visible: Visible {
-            // is_transparent: true,
-            ..Visible::default()
-        },
-        ..PbrBundle::default()
-    });
+    commands
+        .spawn_bundle(MeshBundle {
+            mesh: asset_server.load("meshes/teapot.obj"),
+            render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
+                pipeline_handle,
+            )]),
+            transform: Transform {
+                translation: Vec3::new(0., 0., 0.),
+                ..Transform::default()
+            },
+            ..MeshBundle::default()
+        })
+        .insert(material);
 }
 
 fn configure_logging() -> anyhow::Result<()> {
