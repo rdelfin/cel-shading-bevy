@@ -12,7 +12,7 @@ use bevy::{
         pipeline::{PipelineDescriptor, RenderPipeline, RenderPipelines},
         render_graph::{base, AssetRenderResourcesNode, RenderGraph},
         renderer::RenderResources,
-        shader::{Shader, ShaderStage, ShaderStages},
+        shader::{Shader, ShaderStages},
     },
     transform::components::Transform,
     window::WindowDescriptor,
@@ -26,9 +26,6 @@ use log4rs::{
     config::{Appender, Config, Logger, Root},
     encode::pattern::PatternEncoder,
 };
-
-const VERTEX_SHADER: &str = include_str!("shaders/cel.vert");
-const FRAGMENT_SHADER: &str = include_str!("shaders/cel.frag");
 
 #[derive(RenderResources, Default, TypeUuid)]
 #[uuid = "1e08866c-0b8a-437e-8bce-37733b25127e"]
@@ -65,13 +62,14 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<MyMaterial>>,
     mut pipelines: ResMut<Assets<PipelineDescriptor>>,
-    mut shaders: ResMut<Assets<Shader>>,
     mut render_graph: ResMut<RenderGraph>,
 ) {
+    asset_server.watch_for_changes().unwrap();
+
     // Setup shaders
     let pipeline_handle = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
-        vertex: shaders.add(Shader::from_glsl(ShaderStage::Vertex, VERTEX_SHADER)),
-        fragment: Some(shaders.add(Shader::from_glsl(ShaderStage::Fragment, FRAGMENT_SHADER))),
+        vertex: asset_server.load::<Shader, _>("shaders/cel.vert"),
+        fragment: Some(asset_server.load::<Shader, _>("shaders/cel.frag")),
     }));
 
     render_graph.add_system_node(
