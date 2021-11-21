@@ -4,7 +4,7 @@ use bevy::{
     ecs::system::{Commands, IntoSystem, Res, ResMut},
     input::system::exit_on_esc_system,
     math::Vec3,
-    pbr::{render_graph::LightsNode, LightBundle},
+    pbr::{render_graph::LightsNode, AmbientLight, LightBundle},
     reflect::TypeUuid,
     render::{
         color::Color,
@@ -47,6 +47,10 @@ fn main() -> anyhow::Result<()> {
             height: 800.,
             resizable: false,
             ..WindowDescriptor::default()
+        })
+        .insert_resource(AmbientLight {
+            color: Color::WHITE,
+            brightness: 1.0 / 20.0f32,
         })
         .add_plugins(DefaultPlugins)
         .add_plugin(EguiPlugin)

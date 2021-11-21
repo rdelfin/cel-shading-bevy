@@ -29,6 +29,24 @@ layout(std140, set = 3, binding = 0) uniform Lights {
     Light SceneLights[MAX_LIGHTS];
 };
 
+vec3 levelise(vec3 final_colour) {
+    float intensity = length(final_colour);
+    vec3 norm_colour = normalize(final_colour);
+    float final_intensity = 0.;
+
+    if (intensity > 0.75) {
+        final_intensity = 0.75;
+    } else if (intensity > 0.33) {
+        final_intensity = 0.33;
+    } else if (intensity > 0.1) {
+        final_intensity = 0.1;
+    } else {
+        final_intensity = 0.05;
+    }
+
+    return norm_colour * final_intensity;
+}
+
 void main() {
     vec3 light_accum = vec3(0.0);
     for (int i = 0; i < int(1) && i < MAX_LIGHTS; i++) {
@@ -38,5 +56,10 @@ void main() {
         light_accum += vec3(factor * albedo_color.xyz);
     }
 
-    o_Target = vec4(light_accum, albedo_color.w);
+    vec3 ambient_lighting = albedo_color.xyz * AmbientColor.xyz;
+
+    o_Target = vec4(light_accum + ambient_lighting, albedo_color.w);
+
+    // Cel effect
+    o_Target.xyz = levelise(o_Target.xyz);
 }
