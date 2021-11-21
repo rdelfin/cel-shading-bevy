@@ -4,6 +4,7 @@ description = "Some testing with creating a cel shader in Bevy"
 version = "0.1.0"
 edition = "2021"
 readme = "README.md"
+license = "MIT"
 keywords = ["gamedev"]
 categories = ["games"]
 
