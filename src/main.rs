@@ -32,7 +32,7 @@ const MAX_LIGHTS: usize = 10;
 
 #[derive(RenderResources, Default, TypeUuid)]
 #[uuid = "1e08866c-0b8a-437e-8bce-37733b25127e"]
-struct MyMaterial {
+struct CelMaterial {
     pub albedo_color: Color,
 }
 
@@ -57,7 +57,7 @@ fn main() -> anyhow::Result<()> {
         .add_plugin(ObjPlugin)
         .add_startup_system(setup.system())
         .add_system(exit_on_esc_system.system())
-        .add_asset::<MyMaterial>()
+        .add_asset::<CelMaterial>()
         .run();
 
     Ok(())
@@ -67,7 +67,7 @@ fn main() -> anyhow::Result<()> {
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<MyMaterial>>,
+    mut materials: ResMut<Assets<CelMaterial>>,
     mut pipelines: ResMut<Assets<PipelineDescriptor>>,
     mut render_graph: ResMut<RenderGraph>,
 ) {
@@ -81,7 +81,7 @@ fn setup(
 
     render_graph.add_system_node(
         "my_material",
-        AssetRenderResourcesNode::<MyMaterial>::new(true),
+        AssetRenderResourcesNode::<CelMaterial>::new(true),
     );
     render_graph.add_system_node("lights", LightsNode::new(MAX_LIGHTS));
 
@@ -92,7 +92,7 @@ fn setup(
         .add_node_edge("lights", base::node::MAIN_PASS)
         .unwrap();
 
-    let material = materials.add(MyMaterial {
+    let material = materials.add(CelMaterial {
         albedo_color: Color::rgb(0.0, 1.0, 0.0),
     });
 

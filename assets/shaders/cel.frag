@@ -12,7 +12,7 @@ layout(std140, set = 0, binding = 1) uniform CameraPosition {
     vec4 CameraPos;
 };
 
-layout(set = 2, binding = 0) uniform MyMaterial_albedo_color {
+layout(set = 2, binding = 0) uniform CelMaterial_albedo_color {
     vec4 albedo_color;
 };
 
