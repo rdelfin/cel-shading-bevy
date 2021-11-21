@@ -4,6 +4,7 @@ use bevy::{
     ecs::system::{Commands, IntoSystem, Res, ResMut},
     input::system::exit_on_esc_system,
     math::Vec3,
+    pbr::{render_graph::LightsNode, LightBundle},
     reflect::TypeUuid,
     render::{
         color::Color,
@@ -26,6 +27,8 @@ use log4rs::{
     config::{Appender, Config, Logger, Root},
     encode::pattern::PatternEncoder,
 };
+
+const MAX_LIGHTS: usize = 10;
 
 #[derive(RenderResources, Default, TypeUuid)]
 #[uuid = "1e08866c-0b8a-437e-8bce-37733b25127e"]
@@ -76,19 +79,23 @@ fn setup(
         "my_material",
         AssetRenderResourcesNode::<MyMaterial>::new(true),
     );
+    render_graph.add_system_node("lights", LightsNode::new(MAX_LIGHTS));
 
     render_graph
         .add_node_edge("my_material", base::node::MAIN_PASS)
+        .unwrap();
+    render_graph
+        .add_node_edge("lights", base::node::MAIN_PASS)
         .unwrap();
 
     let material = materials.add(MyMaterial {
         albedo_color: Color::rgb(0.0, 1.0, 0.0),
     });
 
-    /*commands.spawn_bundle(LightBundle {
-        transform: Transform::from_xyz(2.0, 4.0, -5.0),
+    commands.spawn_bundle(LightBundle {
+        transform: Transform::from_xyz(4.0, 4.0, 0.0),
         ..LightBundle::default()
-    });*/
+    });
     commands.spawn_bundle(PerspectiveCameraBundle {
         transform: Transform::from_xyz(5., 10., -20.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..PerspectiveCameraBundle::default()
@@ -122,6 +129,13 @@ fn configure_logging() -> anyhow::Result<()> {
             Logger::builder()
                 .appender("console")
                 .build("gfx_backend_vulkan", LevelFilter::Warn),
+        )
+        // naga::front::spv spews ocasional logs about unexpected annotations. These are caused by
+        // bevy, so I will ignore
+        .logger(
+            Logger::builder()
+                .appender("console")
+                .build("naga::front::spv", LevelFilter::Error),
         )
         .build(Root::builder().appender("console").build(LevelFilter::Info))?;
     log4rs::init_config(config)?;
